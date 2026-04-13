@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // No GPS data, pick first available online livreur
-      nearestLivreur = livreurs.find((l) => l.isOnline) || livreurs[0] || null;
+      nearestLivreur = livreurs.find((l: typeof livreurs[number]) => l.isOnline) || livreurs[0] || null;
       minDistance = 5; // Default 5km
     }
 
