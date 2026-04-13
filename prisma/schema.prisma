@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  password      String
+  role          String    @default("CLIENT") // CLIENT, VENDEUR, AGENT, ADMIN, LIVREUR
+  vehicleType   String?   // MOTO, VOITURE, CAMION - only for LIVREUR
+  deliveryZone  String?   // Zone de livraison préférée - only for LIVREUR
+  isAvailable   Boolean   @default(true) // Disponibilité pour livraison
+  avatar        String?
+  bio           String?
+  city          String?
+  latitude      Float?
+  longitude     Float?
+  isOnline      Boolean   @default(false)
+  lastSeenAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  annonces         Annonce[]
+  buyerLivraisons  Livraison[]    @relation("BuyerLivraisons")
+  livreurLivraisons Livraison[]   @relation("LivreurLivraisons")
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  reviews          Review[]       @relation("ReviewAuthor")
+  receivedReviews  Review[]       @relation("ReviewTarget")
+  favorites        Favorite[]
+  notifications    Notification[]
+}
+
+model Annonce {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  category    String   // LOCATION, VENTE, TERRAIN, PRODUIT
+  city        String
+  address     String?
+  latitude    Float?
+  longitude   Float?
+  images      String   @default("[]")
+  videos      String   @default("[]")
+  status      String   @default("PENDING")
+  views       Int      @default(0)
+  rooms       Int?
+  surface     Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  messages   Message[]
+  reviews    Review[]
+  favorites  Favorite[]
+  livraisons Livraison[]
+
+  @@index([category])
+  @@index([city])
+  @@index([status])
+  @@index([userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  annonceId  String?
+  annonce    Annonce? @relation(fields: [annonceId], references: [id], onDelete: SetNull)
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([annonceId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  userId       String
+  user         User     @relation("ReviewAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  targetUserId String
+  targetUser   User     @relation("ReviewTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  annonceId    String?
+  annonce      Annonce? @relation(fields: [annonceId], references: [id], onDelete: SetNull)
+
+  @@index([targetUserId])
+  @@index([annonceId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  annonceId String
+  annonce   Annonce @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, annonceId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Livraison {
+  id              String    @id @default(cuid())
+  status          String    @default("PENDING") // PENDING, ACCEPTED, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED
+  deliveryPrice   Float     @default(0)
+  distance        Float?
+  pickupAddress   String?
+  deliveryAddress String?
+  pickupLat       Float?
+  pickupLng       Float?
+  deliveryLat     Float?
+  deliveryLng     Float?
+  notes           String?
+  estimatedTime   Int?
+  acceptedAt      DateTime?
+  pickedUpAt      DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  annonceId String
+  annonce   Annonce @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+  buyerId   String
+  buyer     User    @relation("BuyerLivraisons", fields: [buyerId], references: [id], onDelete: Cascade)
+  livreurId String?
+  livreur   User?   @relation("LivreurLivraisons", fields: [livreurId], references: [id], onDelete: SetNull)
+
+  @@index([buyerId])
+  @@index([livreurId])
+  @@index([annonceId])
+  @@index([status])
+}
