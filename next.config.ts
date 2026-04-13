@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
     ],
     unoptimized: false,
   },
-  serverExternalPackages: ["@libsql/client"],
+  serverExternalPackages: ["@neondatabase/serverless"],
 };
 
 export default nextConfig;

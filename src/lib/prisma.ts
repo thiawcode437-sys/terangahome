@@ -1,24 +1,17 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import path from "path";
+import { PrismaNeon } from "@prisma/adapter-neon";
 
 function createPrismaClient() {
-  const tursoUrl = process.env.TURSO_DATABASE_URL;
-  const tursoAuth = process.env.TURSO_AUTH_TOKEN;
+  const neonUrl = process.env.DATABASE_URL;
 
-  if (tursoUrl) {
-    // Production: use Turso cloud database
-    const adapter = new PrismaLibSql({
-      url: tursoUrl,
-      authToken: tursoAuth,
-    });
+  if (neonUrl && neonUrl.startsWith("postgresql")) {
+    // Production: use Neon PostgreSQL
+    const adapter = new PrismaNeon({ connectionString: neonUrl });
     return new PrismaClient({ adapter });
   }
 
-  // Development: use local SQLite file
-  const dbPath = path.join(process.cwd(), "dev.db");
-  const adapter = new PrismaLibSql({ url: `file:${dbPath}` });
-  return new PrismaClient({ adapter });
+  // Fallback: Prisma without adapter (for local dev with direct connection)
+  return new PrismaClient();
 }
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
