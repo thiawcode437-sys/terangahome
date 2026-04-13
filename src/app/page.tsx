@@ -21,7 +21,7 @@ export default async function HomePage() {
   });
 
   const statMap = Object.fromEntries(
-    stats.map((s) => [s.category, s._count])
+    stats.map((s: { category: string; _count: number }) => [s.category, s._count])
   );
 
   return (
